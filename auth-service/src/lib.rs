@@ -1,8 +1,10 @@
 mod routes;
 mod domain;
-mod services;
+pub mod services;
+pub mod app_state;
 
 use routes as api_routes;
+use app_state::AppState;
 
 use std::error::Error;
 
@@ -19,7 +21,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
         let assets_dir = ServeDir::new("assets");
         let router = Router::new()
             .fallback_service(assets_dir)
@@ -27,7 +29,8 @@ impl Application {
             .route("/login", post(api_routes::login))
             .route("/logout", post(api_routes::logout))
             .route("/verify-2fa", post(api_routes::verify_2fa))
-            .route("/verify-token", post(api_routes::verify_token));
+            .route("/verify-token", post(api_routes::verify_token))
+            .with_state(app_state);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
