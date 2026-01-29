@@ -1,8 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::services::hashmap_user_store::HashmapUserStore;
-use crate::domain::{User, UserStore};
+use crate::domain::UserStore;
 
 // Using a type alias to improve readability!
 pub type UserStoreType = Arc<RwLock<dyn UserStore>>;
