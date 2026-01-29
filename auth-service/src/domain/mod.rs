@@ -2,6 +2,7 @@ mod user;
 mod error;
 mod data_stores;
 mod email;
+mod password;
 
 pub use user::*;
 pub use error::*;
