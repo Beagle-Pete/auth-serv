@@ -53,7 +53,7 @@ impl Application {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ErroMessage {
+pub struct ErrorResponse {
     pub error: String,
 }
 
@@ -65,7 +65,7 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpetected error"),
         };
 
-        let body = Json(ErroMessage {
+        let body = Json(ErrorResponse {
             error: message.to_string(),
         });
 
