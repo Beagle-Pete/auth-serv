@@ -1,7 +1,7 @@
 use super::AuthAPIError;
 
-#[derive(Debug, Clone, PartialEq)]
-struct Email (String);
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct Email(String);
 
 impl AsRef<str> for Email {
     fn as_ref(&self) -> &str {

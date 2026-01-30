@@ -1,7 +1,7 @@
 use super::AuthAPIError;
 
 #[derive(Debug, Clone, PartialEq)]
-struct Password(String);
+pub struct Password(String);
 
 impl AsRef<str> for Password {
     fn as_ref(&self) -> &str {
