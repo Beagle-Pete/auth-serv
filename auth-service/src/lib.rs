@@ -1,16 +1,14 @@
 mod routes;
-mod domain;
+pub mod domain;
 pub mod services;
 pub mod app_state;
 
 use routes as api_routes;
 use app_state::AppState;
-use domain::AuthAPIError;
-use serde::{Deserialize, Serialize};
 
 use std::error::Error;
 
-use axum::{Json, Router, http::status::StatusCode, response::{IntoResponse, Response}, routing::post, serve::Serve};
+use axum::{Router, routing::post, serve::Serve};
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
 
@@ -52,23 +50,4 @@ impl Application {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: String,
-}
 
-impl IntoResponse for AuthAPIError {
-    fn into_response(self) -> Response {
-        let (status, message) = match self {
-            AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-            AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
-            AuthAPIError::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpetected error"),
-        };
-
-        let body = Json(ErrorResponse {
-            error: message.to_string(),
-        });
-
-        (status, body).into_response()
-    }
-}
