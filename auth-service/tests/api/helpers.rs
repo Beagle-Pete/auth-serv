@@ -1,13 +1,19 @@
 use auth_service::Application;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::app_state::AppState;
+use axum::routing::head;
 
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    collections::HashMap
+};
 use tokio::sync::RwLock;
 use uuid::Uuid;
+use reqwest::cookie::Jar;
 
 pub struct TestApp {
     pub address: String,
+    pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
 }
 
@@ -27,10 +33,15 @@ impl TestApp {
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(app.run());
 
-        let http_client = reqwest::Client::new();
+        let cookie_jar = Arc::new(Jar::default());
+        let http_client = reqwest::Client::builder()
+            .cookie_provider(cookie_jar.clone())
+            .build()
+            .unwrap();
 
         Self {
             address,
+            cookie_jar,
             http_client,
         }
     }
@@ -93,4 +104,17 @@ pub fn get_random_email() -> String {
 
 pub fn get_random_password() -> String {
     format!("{}", Uuid::new_v4())
+}
+
+pub fn parse_cookie_values(header_value: &str) -> HashMap<&str, &str>{
+    // Parse through cookies from reqwest
+    let parts: Vec<&str> = header_value.split(";").collect();
+
+    let mut map = HashMap::new();
+    for part in parts {
+        let (name, value) = part.split_once("=").unwrap();
+        map.insert(name.trim(), value.trim());
+    }
+
+    map
 }
