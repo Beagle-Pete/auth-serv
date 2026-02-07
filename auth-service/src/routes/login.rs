@@ -1,10 +1,17 @@
 use axum::{Json, response::IntoResponse, http::status::StatusCode, extract::State};
+use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 
 use crate::app_state::AppState;
 use crate::domain::{AuthAPIError, UserStoreError, Email, Password};
+use crate::utils::auth;
 
-pub async fn login(State(state): State<AppState>, Json(request): Json<LoginRequest>) -> Result<impl IntoResponse, AuthAPIError> {
+pub async fn login(
+    State(state): State<AppState>, 
+    jar: CookieJar,
+    Json(request): Json<LoginRequest>
+) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
+    
     let email = Email::parse(request.email)?;
     let password = Password::parse(request.password)?;
 
@@ -26,7 +33,12 @@ pub async fn login(State(state): State<AppState>, Json(request): Json<LoginReque
             }
         })?;
 
-    Ok(StatusCode::OK.into_response())
+    let auth_cookie = auth::generate_auth_cookie(&email)
+        .map_err(|_| {AuthAPIError::UnexpectedError})?;
+
+    let updated_jar = jar.add(auth_cookie);
+
+    Ok((updated_jar, StatusCode::OK.into_response()))
 }
 
 #[derive(Deserialize)]
