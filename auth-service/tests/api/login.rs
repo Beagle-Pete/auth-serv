@@ -33,6 +33,8 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
 
+    // TODO: Check if JWT cookie exists. 
+    // This only checks if there are cookies present, not if the JWT cookie exists.
     assert!(!auth_cookie.value().is_empty());
 }
 

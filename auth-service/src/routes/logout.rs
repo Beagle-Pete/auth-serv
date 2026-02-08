@@ -9,13 +9,15 @@ use crate::{
 
 pub async fn logout(jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     // Retrieve JWT cookie from the `CookieJar`
-    let cookie = jar.get(&JWT_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;
+    let cookie = jar.get(JWT_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;
 
     let token = cookie.value().to_owned();
 
     // validate_token
-    let claims = auth::validate_token(&token).await
+    let _claims = auth::validate_token(&token).await
         .map_err(|_| AuthAPIError::InvalidToken)?;
+
+    let jar = jar.remove(JWT_COOKIE_NAME);
     
     Ok((jar, StatusCode::OK.into_response()))
 }

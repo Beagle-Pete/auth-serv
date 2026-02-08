@@ -118,3 +118,9 @@ pub fn parse_cookie_values(header_value: &str) -> HashMap<&str, &str>{
 
     map
 }
+
+pub fn list_all_cookies(response: &reqwest::Response) {
+    response
+        .cookies()
+        .for_each(|cookie| println!("{:#?}", cookie));
+}
