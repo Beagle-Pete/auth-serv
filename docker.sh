@@ -21,6 +21,11 @@ while IFS= read -r line; do
   fi
 done < <(grep -v '^#' "$ENV_FILE")
 
-# Run docker-compose commands with exported variables
-docker compose build
-docker compose up
+# Build and exit if build fails
+if ! docker compose build; then
+  echo "Error: 'docker compose build' failed — aborting" >&2
+  exit 1
+fi
+
+# If build succeeded, start containers
+docker compose up -d
