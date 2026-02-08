@@ -13,7 +13,6 @@ fn set_token(var_name: &str) -> String {
     if secret.is_empty() {
         panic!("{var_name} must not be empty.");
     }
-    println!("env var - name: {var_name}, value: {secret}");
     secret
 }
 
