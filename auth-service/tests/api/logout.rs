@@ -1,4 +1,4 @@
-use auth_service::{utils::constants::JWT_COOKIE_NAME, utils::auth, domain::ErrorResponse};
+use auth_service::{domain::{BannedTokenStore, ErrorResponse}, utils::{auth, constants::JWT_COOKIE_NAME}};
 
 use axum::http::response;
 use axum_extra::extract::cookie;
@@ -33,25 +33,30 @@ async fn should_return_200_if_valid_jwt_cookie() {
 
     assert_eq!(response.status().as_u16(), 200);
 
-    let auth_cookie = response
+    let auth_cookie_login = response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
 
-    assert!(!auth_cookie.value().is_empty());
+    assert!(!auth_cookie_login.value().is_empty());
 
     // Logout
     let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 200);
 
-    let auth_cookie = response
+    let auth_cookie_logout = response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
     
-    if let Some(cookie) = &auth_cookie {
+    if let Some(cookie) = &auth_cookie_logout {
         assert_eq!(cookie.value(), "");
     }
+
+    let banned_token_store = app.banned_token_store.write().await;
+    let is_token_banned = banned_token_store.check(auth_cookie_login.value()).await.unwrap();
+
+    assert!(is_token_banned);
 }
 
 #[tokio::test]
