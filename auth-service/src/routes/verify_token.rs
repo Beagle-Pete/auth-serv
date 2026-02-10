@@ -3,8 +3,12 @@ use serde::Deserialize;
 
 use crate::utils::auth;
 use crate::domain::AuthAPIError;
+use crate::AppState;
 
-pub async fn verify_token(Json(request): Json<VerifyTokenRequest>) -> Result<impl IntoResponse, AuthAPIError> {
+pub async fn verify_token(
+    State(state): State<AppState>, 
+    Json(request): Json<VerifyTokenRequest>
+) -> Result<impl IntoResponse, AuthAPIError> {
 
     let token = request.token;
 
@@ -12,6 +16,15 @@ pub async fn verify_token(Json(request): Json<VerifyTokenRequest>) -> Result<imp
         .await
         .map_err(|_| AuthAPIError::InvalidToken)?;
 
+    // Check if token is in banned token store
+    let banned_token_store = state.banned_token_store.write().await;
+    let is_token_banned = banned_token_store.check(&token)
+        .await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
+
+    if is_token_banned {
+        return Err(AuthAPIError::InvalidToken);
+    }
 
     Ok(StatusCode::OK.into_response())
 }
