@@ -41,6 +41,7 @@ jobs:
               working-directory: ./auth-service
               run: |
                   export JWT_SECRET=secret
+                  export DROPLET_IP=111.222.333.44
                   cargo build --verbose
                   cargo test --verbose
 
