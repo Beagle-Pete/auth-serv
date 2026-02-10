@@ -9,13 +9,13 @@ pub struct HashsetBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
-    async fn store_token(&mut self, token: &String) -> Result<(), BannedTokenStoreError> {
+    async fn store_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
         self.tokens.insert(token.into());
 
         Ok(())
     }
 
-    async fn check(&self, token: &String) -> Result<bool, BannedTokenStoreError> {
+    async fn check(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         
         Ok(self.tokens.contains(token))
     }   
