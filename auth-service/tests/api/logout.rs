@@ -4,7 +4,7 @@ use axum::http::response;
 use axum_extra::extract::cookie;
 use reqwest::{Url, cookie::CookieStore};
 
-use crate::helpers::{TestApp, parse_cookie_values, get_random_email, list_all_cookies};
+use crate::helpers::{TestApp, parse_cookie_values, get_random_email};
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {

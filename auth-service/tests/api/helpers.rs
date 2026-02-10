@@ -92,9 +92,10 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_verify_token(&self) -> reqwest::Response {
+    pub async fn post_verify_token<T: serde::Serialize>(&self, body: &T) -> reqwest::Response {
         self.http_client
             .post(format!("{}/verify-token", &self.address))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request.")
@@ -123,8 +124,15 @@ pub fn parse_cookie_values(header_value: &str) -> HashMap<&str, &str>{
     map
 }
 
-pub fn list_all_cookies(response: &reqwest::Response) {
-    response
+pub fn get_all_cookies(response: &reqwest::Response) -> HashMap<String, String> {
+    let cookies: HashMap<String, String> = response
         .cookies()
-        .for_each(|cookie| println!("{:#?}", cookie));
+        .map(|cookie| {
+            let name = cookie.name().to_owned();
+            let value = cookie.value().to_owned();
+            (name, value)
+        })
+        .collect();
+
+    cookies
 }
