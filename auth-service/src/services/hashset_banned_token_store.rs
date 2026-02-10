@@ -9,7 +9,7 @@ pub struct HashsetBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
-    async fn store_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
+    async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
         self.tokens.insert(token.into());
 
         Ok(())
@@ -32,9 +32,9 @@ mod tests {
         let token1 = "token1".to_owned();
         let token2 = "token2".to_owned();
 
-        banned_tokens.store_token(&token1).await.unwrap();
-        banned_tokens.store_token(&token2).await.unwrap();
-        banned_tokens.store_token(&token2).await.unwrap();
+        banned_tokens.add_token(&token1).await.unwrap();
+        banned_tokens.add_token(&token2).await.unwrap();
+        banned_tokens.add_token(&token2).await.unwrap();
 
         assert!(banned_tokens.tokens.contains(&token1));
         assert!(banned_tokens.tokens.contains(&token2));
@@ -47,8 +47,8 @@ mod tests {
         let token1 = "token1".to_owned();
         let token2 = "".to_owned();
 
-        banned_tokens.store_token(&token1).await.unwrap();
-        banned_tokens.store_token(&token2).await.unwrap();
+        banned_tokens.add_token(&token1).await.unwrap();
+        banned_tokens.add_token(&token2).await.unwrap();
 
         assert!(banned_tokens.check(&token1).await.unwrap());
         assert!(banned_tokens.check(&token2).await.unwrap());
