@@ -10,6 +10,7 @@ pub enum UserStoreError {
 
 #[derive(Debug, PartialEq)]
 pub enum BannedTokenStoreError {
+    InvalidToken,
     UnexpectedError,
 }
 
@@ -26,5 +27,5 @@ pub trait UserStore: Send + Sync {
 pub trait BannedTokenStore: Send + Sync {
     async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError>;
 
-    async fn check(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn check_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
 }

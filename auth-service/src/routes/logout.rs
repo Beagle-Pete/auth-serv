@@ -4,7 +4,6 @@ use axum::{response::IntoResponse,
 };
 use axum_extra::extract::CookieJar;
 
-
 use crate::{
     domain::AuthAPIError,
     utils::constants::JWT_COOKIE_NAME,
@@ -17,12 +16,13 @@ pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> Result<(Co
     let cookie = jar.get(JWT_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;
 
     let token = cookie.value().to_owned();
+    let banned_token_store = state.banned_token_store;
 
     // validate_token
-    let _claims = auth::validate_token(&token).await
+    let _claims = auth::validate_token(&token, banned_token_store.clone()).await
         .map_err(|_| AuthAPIError::InvalidToken)?;
 
-    let mut banned_token_store = state.banned_token_store.write().await;
+    let mut banned_token_store = banned_token_store.write().await;
     banned_token_store.add_token(&token)
         .await
         .map_err(|_| AuthAPIError::UnexpectedError)?;

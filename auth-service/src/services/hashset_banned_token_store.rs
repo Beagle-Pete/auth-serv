@@ -15,8 +15,7 @@ impl BannedTokenStore for HashsetBannedTokenStore {
         Ok(())
     }
 
-    async fn check(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
-        
+    async fn check_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {        
         Ok(self.tokens.contains(token))
     }   
 }
@@ -50,18 +49,18 @@ mod tests {
         banned_tokens.add_token(&token1).await.unwrap();
         banned_tokens.add_token(&token2).await.unwrap();
 
-        assert!(banned_tokens.check(&token1).await.unwrap());
-        assert!(banned_tokens.check(&token2).await.unwrap());
+        assert_eq!(banned_tokens.check_token(&token1).await, Ok(true));
+        assert_eq!(banned_tokens.check_token(&token2).await, Ok(true));
     }
 
     #[tokio::test]
     async fn test_get_nonexisting_token() {
-        let mut banned_tokens = HashsetBannedTokenStore::default();
+        let banned_tokens = HashsetBannedTokenStore::default();
 
         let token1 = "token1".to_owned();
         let token2 = "".to_owned();
 
-        assert!(!banned_tokens.check(&token1).await.unwrap());
-        assert!(!banned_tokens.check(&token2).await.unwrap());
+        assert_eq!(banned_tokens.check_token(&token1).await, Ok(false));
+        assert_eq!(banned_tokens.check_token(&token2).await, Ok(false));
     }
 }

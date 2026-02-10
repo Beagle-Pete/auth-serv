@@ -1,10 +1,17 @@
-use auth_service::{domain::{BannedTokenStore, ErrorResponse}, utils::{auth, constants::JWT_COOKIE_NAME}};
+use auth_service::{
+    domain::{BannedTokenStore, ErrorResponse},
+    services::hashset_banned_token_store::HashsetBannedTokenStore,
+    utils::{auth, constants::JWT_COOKIE_NAME},
+};
 
 use axum::http::response;
 use axum_extra::extract::cookie;
 use reqwest::{Url, cookie::CookieStore};
+use tokio::sync::RwLock;
 
-use crate::helpers::{TestApp, parse_cookie_values, get_random_email};
+use std::sync::Arc;
+
+use crate::helpers::{TestApp, get_random_email, parse_cookie_values};
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {
@@ -12,7 +19,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
 
     let random_email = get_random_email();
 
-    // Signup 
+    // Signup
     let signup_body = serde_json::json!({
         "email": random_email,
         "password": "password123",
@@ -48,13 +55,16 @@ async fn should_return_200_if_valid_jwt_cookie() {
     let auth_cookie_logout = response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
-    
+
     if let Some(cookie) = &auth_cookie_logout {
         assert_eq!(cookie.value(), "");
     }
 
     let banned_token_store = app.banned_token_store.write().await;
-    let is_token_banned = banned_token_store.check(auth_cookie_login.value()).await.unwrap();
+    let is_token_banned = banned_token_store
+        .check_token(auth_cookie_login.value())
+        .await
+        .unwrap();
 
     assert!(is_token_banned);
 }
@@ -65,7 +75,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
 
     let random_email = get_random_email();
 
-    // Signup 
+    // Signup
     let signup_body = serde_json::json!({
         "email": random_email,
         "password": "password123",
@@ -101,7 +111,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     let auth_cookie = response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
-    
+
     if let Some(cookie) = &auth_cookie {
         assert_eq!(cookie.value(), "");
     }
@@ -118,7 +128,7 @@ async fn should_return_400_if_there_are_no_cookies() {
 
     let url = &Url::parse("http://127.0.0.1").expect("Failed to parse URL");
     let cookies = app.cookie_jar.cookies(url);
-    
+
     assert!(cookies.is_none())
 }
 
@@ -132,12 +142,12 @@ async fn should_return_400_if_jwt_cookie_missing() {
         "random=invalid; HttpOnly; SameSite=Lax; Secure; Path=/",
         url,
     );
-    
+
     let cookies = app.cookie_jar.cookies(url).unwrap();
     let cookies = parse_cookie_values(cookies.to_str().unwrap());
 
     let cookie_exists = cookies.contains_key(JWT_COOKIE_NAME);
-    
+
     assert!(!cookie_exists)
 }
 
@@ -154,13 +164,13 @@ async fn should_return_401_if_invalid_token() {
         ),
         url,
     );
-    
+
     let cookies = app.cookie_jar.cookies(url).unwrap();
     let cookies = parse_cookie_values(cookies.to_str().unwrap());
 
     let cookie = cookies.get(JWT_COOKIE_NAME).unwrap();
+    let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
 
-    let result = auth::validate_token(cookie).await;
+    let result = auth::validate_token(cookie, banned_token_store).await;
     assert!(result.is_err());
-
 }
