@@ -30,8 +30,6 @@ async fn should_return_200_if_valid_jwt_cookie() {
     });
 
     let response = app.post_login(&login_body).await;
-    println!("--> Login Cookies");
-    list_all_cookies(&response);
 
     assert_eq!(response.status().as_u16(), 200);
 
@@ -44,8 +42,6 @@ async fn should_return_200_if_valid_jwt_cookie() {
 
     // Logout
     let response = app.post_logout().await;
-    println!("--> Logout Cookies");
-    list_all_cookies(&response);
 
     assert_eq!(response.status().as_u16(), 200);
 
