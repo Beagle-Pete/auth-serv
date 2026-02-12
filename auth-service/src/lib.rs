@@ -1,4 +1,4 @@
-mod routes;
+pub mod routes;
 pub mod domain;
 pub mod services;
 pub mod app_state;
