@@ -92,10 +92,12 @@ impl TwoFACode {
 
 impl Default for TwoFACode {
     fn default() -> Self {
-        let code = rand::rng().random_range(0..=999_999).to_string();
-        let leading_zeros = "0".repeat(6-code.len());
+        let mut code = rand::rng().random_range(0..=999_999).to_string();
         
-        let code = format!("{}{}", leading_zeros, code);
+        if code.len() < 6 {
+            let leading_zeros = "0".repeat(6-code.len());
+            code = format!("{}{}", leading_zeros, code);
+        } 
 
         TwoFACode(code)
     }
