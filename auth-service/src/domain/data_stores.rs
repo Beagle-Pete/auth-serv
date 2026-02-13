@@ -34,7 +34,7 @@ pub trait BannedTokenStore: Send + Sync {
 
 // 2FA Store
 #[async_trait::async_trait]
-pub trait TwoFACodeStore {
+pub trait TwoFACodeStore: Send + Sync {
     async fn add_code(
         &mut self,
         email: Email,
@@ -72,6 +72,12 @@ impl Default for LoginAttemptId {
     }
 }
 
+impl AsRef<str> for LoginAttemptId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TwoFACode(String);
 
@@ -100,5 +106,12 @@ impl Default for TwoFACode {
         } 
 
         TwoFACode(code)
+    }
+}
+
+
+impl AsRef<str> for TwoFACode {
+    fn as_ref(&self) -> &str {
+        &self.0
     }
 }
