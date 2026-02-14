@@ -3,6 +3,7 @@ use auth_service::{
     services::hashmap_user_store::HashmapUserStore,
     services::hashset_banned_token_store::HashsetBannedTokenStore,
     services::hahsmap_two_fa_code_store::HashMapTwoFACodeStore,
+    services::mock_email_client::MockEmailClient,
     app_state::TwoFACodeStoreType,
     app_state::AppState,
     utils::constants::test,
@@ -31,8 +32,9 @@ impl TestApp {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store = Arc::new(RwLock::new(HashMapTwoFACodeStore::default()));
+        let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
 
-        let app_state = AppState::new(user_store, banned_token_store.clone(), two_fa_code_store.clone());
+        let app_state = AppState::new(user_store, banned_token_store.clone(), two_fa_code_store.clone(), email_client);
 
         let app = Application::build(app_state,test::APP_ADDRESS)
             .await
