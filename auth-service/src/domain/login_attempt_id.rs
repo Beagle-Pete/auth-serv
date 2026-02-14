@@ -1,10 +1,12 @@
+use super::AuthAPIError;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
+    pub fn parse(id: String) -> Result<Self, AuthAPIError> {
         if uuid::Uuid::try_parse(&id).is_err() {
-            return Err("Login Attempt ID not a valid".to_owned());
+            return Err(AuthAPIError::InvalidLoginAttempId);
         }
 
         Ok(LoginAttemptId(id))

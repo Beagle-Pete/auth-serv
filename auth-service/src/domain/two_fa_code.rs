@@ -1,19 +1,21 @@
+use super::AuthAPIError;
+
 use rand::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, String> {
+    pub fn parse(code: String) -> Result<Self, AuthAPIError> {
         match code.parse::<usize>() {
             Ok(_) => {
                 if code.len() != 6 {
-                    return Err("2FA code must be 6 digits".to_owned());
+                    return Err(AuthAPIError::InvalidTwoFACode);
                 }
 
                 Ok(TwoFACode(code))
             },
-            Err(_) => Err("Code ".to_owned()),
+            Err(_) => Err(AuthAPIError::InvalidTwoFACode),
         }        
     }
 }

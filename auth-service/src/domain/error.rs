@@ -8,6 +8,8 @@ pub enum AuthAPIError {
     IncorrectCredentials,
     MissingToken,
     InvalidToken,
+    InvalidLoginAttempId,
+    InvalidTwoFACode,
     UnexpectedError,
 }
 
@@ -19,6 +21,8 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing token"),
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid token"),
+            AuthAPIError::InvalidLoginAttempId => (StatusCode::BAD_REQUEST, "Invalid login attempt id"),
+            AuthAPIError::InvalidTwoFACode => (StatusCode::BAD_REQUEST, "Invalid 2FA code"),
             AuthAPIError::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpetected error"),
         };
 

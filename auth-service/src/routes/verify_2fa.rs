@@ -3,16 +3,13 @@ use axum::http::status::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::domain::AuthAPIError;
+use crate::domain::{AuthAPIError, Email, LoginAttemptId, TwoFACode};
 
 pub async fn verify_2fa(Json(request): Json<VerifyTwoFARequest>) -> Result<impl IntoResponse, AuthAPIError> {
 
-    // Create JSON response body with 2FA
-    // let response_json = Json(VerifyTwoFAResponse {
-    //     email: "2FA required".to_owned(),
-    //     login_attempt_id: "".to_owned(),
-    //     two_fa_code: "".to_owned(),
-    // });
+    let email = Email::parse(request.email)?;
+    let login_attemp_id = LoginAttemptId::parse(request.login_attempt_id)?;
+    let two_fa_code = TwoFACode::parse(request.two_fa_code)?;
 
     Ok(StatusCode::OK)
 }
@@ -20,7 +17,7 @@ pub async fn verify_2fa(Json(request): Json<VerifyTwoFARequest>) -> Result<impl 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VerifyTwoFARequest {
     pub email: String,
-    #[serde(rename = "loginAttempId")]
+    #[serde(rename = "loginAttemptId")]
     pub login_attempt_id: String,
     #[serde(rename = "2FACode")]
     pub two_fa_code: String,
