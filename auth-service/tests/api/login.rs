@@ -1,4 +1,5 @@
-use auth_service::domain::ErrorResponse;
+use auth_service::domain::{Email, ErrorResponse};
+use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::utils::constants::JWT_COOKIE_NAME;
 
 use crate::helpers::{TestApp, get_random_email};
@@ -9,6 +10,7 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 
     let random_email = get_random_email();
 
+    //  Signup
     let signup_body = serde_json::json!({
         "email": random_email,
         "password": "password123",
@@ -19,6 +21,7 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 
     assert_eq!(response.status().as_u16(), 201);
 
+    // Login
     let login_body = serde_json::json!({
         "email": random_email,
         "password": "password123",
@@ -36,6 +39,51 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     // TODO: Check if JWT cookie exists. 
     // This only checks if there are cookies present, not if the JWT cookie exists.
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+
+    let random_email = get_random_email();
+    let email = Email::parse(random_email.clone()).unwrap();
+
+    // Signup wih 2FA
+    let signup_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": true
+    });
+
+    let response = app.post_signup(&signup_body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    // Login
+    let login_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+    });
+
+    let response = app.post_login(&login_body).await;
+
+    assert_eq!(response.status().as_u16(), 206);
+
+    // Verify that 2FA code was added to store
+    let two_fa_code_store = app.two_fa_code_store.write().await;
+    assert!(two_fa_code_store.get_code(&email).await.is_ok());
+
+    // Verify the response JSON is correct
+    let (login_attempt_id, _) = two_fa_code_store.get_code(&email).await.unwrap();
+
+    let response_json = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse");
+
+    assert_eq!(response_json.message, "2FA required".to_owned());
+    assert_eq!(response_json.login_attempt_id, login_attempt_id.as_ref().to_owned());
+
 }
 
 #[tokio::test]
