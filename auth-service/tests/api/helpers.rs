@@ -1,8 +1,8 @@
 use auth_service::{
     Application, 
-    services::hashmap_user_store::HashmapUserStore,
-    services::hashset_banned_token_store::HashsetBannedTokenStore,
-    services::hahsmap_two_fa_code_store::HashMapTwoFACodeStore,
+    services::data_stores::hashmap_user_store::HashmapUserStore,
+    services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore,
+    services::data_stores::hahsmap_two_fa_code_store::HashMapTwoFACodeStore,
     services::mock_email_client::MockEmailClient,
     app_state::TwoFACodeStoreType,
     app_state::AppState,

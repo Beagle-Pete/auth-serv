@@ -1,6 +1,6 @@
 use auth_service::{
     domain::{BannedTokenStore, ErrorResponse},
-    services::hashset_banned_token_store::HashsetBannedTokenStore,
+    services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore,
     utils::{auth, constants::JWT_COOKIE_NAME},
 };
 

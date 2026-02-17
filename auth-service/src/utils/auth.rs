@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 use crate::app_state::BannedTokenStoreType;
 use crate::domain::{BannedTokenStore, Email};
-use crate::services::hashset_banned_token_store::HashsetBannedTokenStore;
+use crate::services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore;
 
 // Create cookie with a new JWT auth token
 pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
