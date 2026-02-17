@@ -1,5 +1,4 @@
-use auth_service::{domain::BannedTokenStore, utils::constants::JWT_COOKIE_NAME};
-use axum::http::response;
+use auth_service::utils::constants::JWT_COOKIE_NAME;
 
 use crate::helpers::{TestApp, get_random_email, get_all_cookies};
 

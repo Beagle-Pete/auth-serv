@@ -9,8 +9,6 @@ use auth_service::{
     utils::constants::test,
 };
 
-use axum::routing::head;
-
 use std::{
     sync::Arc,
     collections::HashMap
@@ -118,10 +116,6 @@ impl TestApp {
 
 pub fn get_random_email() -> String {
     format!("{}@example.com", Uuid::new_v4())
-}
-
-pub fn get_random_password() -> String {
-    format!("{}", Uuid::new_v4())
 }
 
 pub fn parse_cookie_values(header_value: &str) -> HashMap<&str, &str>{

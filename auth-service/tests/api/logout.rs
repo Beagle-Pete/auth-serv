@@ -1,11 +1,9 @@
 use auth_service::{
-    domain::{BannedTokenStore, ErrorResponse},
+    domain::{BannedTokenStore},
     services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore,
     utils::{auth, constants::JWT_COOKIE_NAME},
 };
 
-use axum::http::response;
-use axum_extra::extract::cookie;
 use reqwest::{Url, cookie::CookieStore};
 use tokio::sync::RwLock;
 

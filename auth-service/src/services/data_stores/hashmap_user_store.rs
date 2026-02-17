@@ -1,6 +1,5 @@
 use crate::domain::{UserStore, UserStoreError, User, Email, Password};
 
-use core::panic::PanicMessage;
 use std::collections::HashMap;
 
 

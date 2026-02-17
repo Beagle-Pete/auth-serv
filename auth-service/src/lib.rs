@@ -7,7 +7,7 @@ pub mod utils;
 use routes as api_routes;
 use app_state::AppState;
 use sqlx::{PgPool, postgres::PgPoolOptions};
-use utils::constants::{DROPLET_IP, JWT_SECRET};
+use utils::constants::{DROPLET_IP};
 
 use std::error::Error;
 
