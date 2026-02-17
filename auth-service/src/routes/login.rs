@@ -3,7 +3,7 @@ use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
 use crate::app_state::AppState;
-use crate::domain::{AuthAPIError, UserStoreError, Email, Password, LoginAttemptId, TwoFACode};
+use crate::domain::{AuthAPIError, UserStoreError, Email, HashedPassword, LoginAttemptId, TwoFACode};
 use crate::utils::auth;
 
 pub async fn login(
@@ -13,7 +13,7 @@ pub async fn login(
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     
     let email = Email::parse(request.email)?;
-    let password = Password::parse(request.password)?;
+    let password = HashedPassword::parse(request.password)?;
 
     let user_store = state.user_store.write().await;
     

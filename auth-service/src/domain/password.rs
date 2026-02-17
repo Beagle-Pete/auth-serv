@@ -1,15 +1,15 @@
 use super::AuthAPIError;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Password(String);
+pub struct HashedPassword(String);
 
-impl AsRef<str> for Password {
+impl AsRef<str> for HashedPassword {
     fn as_ref(&self) -> &str {
         &self.0
     }
 }
 
-impl Password {
+impl HashedPassword {
     pub fn parse(password: String) -> Result<Self, AuthAPIError> {
 
         if password.len() < 8 {
@@ -26,14 +26,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_valid_password() {
-        let password = Password::parse("RustOrBust456!".to_owned()).unwrap();
+        let password = HashedPassword::parse("RustOrBust456!".to_owned()).unwrap();
 
         assert_eq!(password.0, "RustOrBust456!".to_owned());
     }
 
     #[tokio::test]
     async fn test_asref_impl() {
-        let password = Password::parse("RustOrBust456!".to_owned()).unwrap();
+        let password = HashedPassword::parse("RustOrBust456!".to_owned()).unwrap();
 
         assert_eq!(password.as_ref(), "RustOrBust456!");
     }
@@ -42,8 +42,8 @@ mod tests {
     async fn test_invalid_password() {
 
         let test_cases = [
-            Password::parse("1234567".to_owned()),
-            Password::parse("badpass".to_owned()),
+            HashedPassword::parse("1234567".to_owned()),
+            HashedPassword::parse("badpass".to_owned()),
         ];
 
         for test_case in test_cases {

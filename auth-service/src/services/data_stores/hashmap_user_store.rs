@@ -1,4 +1,4 @@
-use crate::domain::{UserStore, UserStoreError, User, Email, Password};
+use crate::domain::{UserStore, UserStoreError, User, Email, HashedPassword};
 
 use std::collections::HashMap;
 
@@ -27,7 +27,7 @@ impl UserStore for HashmapUserStore {
         self.users.get(email).ok_or(UserStoreError::UserNotFound)
     }
     
-    async fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
+    async fn validate_user(&self, email: &Email, password: &HashedPassword) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
 
         if &user.password != password {
@@ -48,7 +48,7 @@ mod tests {
         let mut users = HashmapUserStore::default();
 
         let email = Email::parse("text@example.com".to_owned()).unwrap();
-        let password = Password::parse("1234ABCD".to_owned()).unwrap();
+        let password = HashedPassword::parse("1234ABCD".to_owned()).unwrap();
 
         let new_user = User::new(email, password, false);
 
@@ -64,7 +64,7 @@ mod tests {
         let mut users = HashmapUserStore::default();
 
         let email = Email::parse("text@example.com".to_owned()).unwrap();
-        let password = Password::parse("1234ABCD".to_owned()).unwrap();
+        let password = HashedPassword::parse("1234ABCD".to_owned()).unwrap();
         let new_user = User::new(email, password, false);
 
         let _ = users.add_user(new_user.clone()).await;
@@ -83,14 +83,14 @@ mod tests {
         let mut users = HashmapUserStore::default();
 
         let email = Email::parse("text@example.com".to_owned()).unwrap();
-        let password = Password::parse("1234ABCD".to_owned()).unwrap();
+        let password = HashedPassword::parse("1234ABCD".to_owned()).unwrap();
         let new_user = User::new(email, password, false);
 
         let _ = users.add_user(new_user.clone()).await;
 
         let validate_user1 = users.validate_user(&new_user.email, &new_user.password).await;
 
-        let password2 = Password::parse("wrong_password".to_owned()).unwrap();
+        let password2 = HashedPassword::parse("wrong_password".to_owned()).unwrap();
         let validate_user2 = users.validate_user(&new_user.email, &password2).await;
 
         let email3 = Email::parse("non-existent-user@example.com".to_owned()).unwrap();
