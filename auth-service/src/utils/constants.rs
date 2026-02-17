@@ -5,6 +5,7 @@ use std::env as std_env;
 lazy_static! {
     pub static ref JWT_SECRET: String = set_token(env::JWT_SECRET_ENV_VAR);
     pub static ref DROPLET_IP: String = set_token(env::DROPLET_IP_ENV_VAR);
+    pub static ref DATABASE_URL: String = set_token(env::DATABASE_URL_ENV_VAR);
 }
 
 fn set_token(var_name: &str) -> String {
@@ -19,6 +20,7 @@ fn set_token(var_name: &str) -> String {
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
     pub const DROPLET_IP_ENV_VAR: &str = "DROPLET_IP";
+    pub const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
 }
 
 pub mod prod {
