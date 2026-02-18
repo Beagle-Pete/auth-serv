@@ -1,4 +1,4 @@
-use crate::domain::{UserStore, UserStoreError, User, Email};
+use crate::domain::{data_stores::UserStore, data_stores::UserStoreError, User, Email};
 
 use std::collections::HashMap;
 
