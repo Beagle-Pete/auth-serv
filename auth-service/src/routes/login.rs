@@ -13,11 +13,11 @@ pub async fn login(
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     
     let email = Email::parse(request.email)?;
-    let password = HashedPassword::parse(request.password)?;
+    HashedPassword::parse(request.password.clone()).await?;
 
     let user_store = state.user_store.write().await;
     
-    if let Err(err) = user_store.validate_user(&email, &password).await {
+    if let Err(err) = user_store.validate_user(&email, &request.password).await {
         match err {
             UserStoreError::UserNotFound => return Err(AuthAPIError::IncorrectCredentials),
             UserStoreError::InvalidCredentials => return Err(AuthAPIError::IncorrectCredentials),

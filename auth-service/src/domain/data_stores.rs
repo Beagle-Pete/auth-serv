@@ -1,4 +1,4 @@
-use super::{User, Email, HashedPassword, LoginAttemptId, TwoFACode};
+use super::{User, Email, LoginAttemptId, TwoFACode};
 
 // User Store
 #[derive(Debug, PartialEq)]
@@ -15,7 +15,7 @@ pub trait UserStore: Send + Sync {
 
     async fn get_user(&self, email: &Email) -> Result<&User, UserStoreError>;
     
-    async fn validate_user(&self, email: &Email, password: &HashedPassword) -> Result<(), UserStoreError>;
+    async fn validate_user(&self, email: &Email, raw_password: &str) -> Result<(), UserStoreError>;
 }
 
 // Banned Token Store

@@ -6,7 +6,7 @@ use crate::domain::{AuthAPIError, User, UserStoreError, Email, HashedPassword};
 
 pub async fn signup(State(state): State<AppState>, Json(request): Json<SignupRequest>) -> Result<impl IntoResponse, AuthAPIError> {
     let email = Email::parse(request.email)?;
-    let password = HashedPassword::parse(request.password)?;
+    let password = HashedPassword::parse(request.password).await?;
     let requires_2fa = request.requires_2fa;
 
     let user = User::new(email, password, requires_2fa);
