@@ -5,9 +5,6 @@ use auth_service::{
     get_redis_client, 
     services::{
         data_stores::{
-            hahsmap_two_fa_code_store::HashMapTwoFACodeStore, 
-            hashmap_user_store::HashmapUserStore, 
-            hashset_banned_token_store::HashsetBannedTokenStore, 
             postgres_user_store::PostgresUserStore,
             redis_banned_token_store::RedisBannedTokenStore,
             redis_two_fa_code_store::RedisTwoFACodeStore,

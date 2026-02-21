@@ -1,5 +1,4 @@
 use auth_service::{
-    domain::{data_stores::BannedTokenStore},
     services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore,
     utils::{auth, constants::JWT_COOKIE_NAME},
 };

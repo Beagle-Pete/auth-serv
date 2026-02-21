@@ -1,6 +1,4 @@
-use auth_service::services::data_stores::{hashmap_user_store::HashmapUserStore,
-    hashset_banned_token_store::HashsetBannedTokenStore,
-    hahsmap_two_fa_code_store::HashMapTwoFACodeStore,
+use auth_service::services::data_stores::{
     postgres_user_store::PostgresUserStore,
     redis_banned_token_store::RedisBannedTokenStore,
     redis_two_fa_code_store::RedisTwoFACodeStore,
