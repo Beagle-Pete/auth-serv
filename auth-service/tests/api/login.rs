@@ -6,7 +6,7 @@ use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -39,11 +39,13 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     // TODO: Check if JWT cookie exists. 
     // This only checks if there are cookies present, not if the JWT cookie exists.
     assert!(!auth_cookie.value().is_empty());
+    
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
     let email = Email::parse(random_email.clone()).unwrap();
@@ -75,6 +77,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     // Verify the response JSON is correct
     let (login_attempt_id, _) = two_fa_code_store.get_code(&email).await.unwrap();
+    drop(two_fa_code_store);
 
     let response_json = response
         .json::<TwoFactorAuthResponse>()
@@ -84,11 +87,12 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     assert_eq!(response_json.message, "2FA required".to_owned());
     assert_eq!(response_json.login_attempt_id, login_attempt_id.as_ref().to_owned());
 
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let test_cases = [
         serde_json::json!({
@@ -118,11 +122,13 @@ async fn should_return_400_if_invalid_input() {
             "Invalid credentials".to_owned()
         )
     }
+
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     
     // Do I need to create a new user here?
     let user_to_add = serde_json::json!({
@@ -156,11 +162,13 @@ async fn should_return_401_if_incorrect_credentials() {
             "Incorrect credentials".to_owned()
         )
     }
+
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let test_cases = [
         serde_json::json!({
@@ -172,4 +180,6 @@ async fn should_return_422_if_malformed_credentials() {
         let response = app.post_login(&test_case).await;
         assert_eq!(response.status().as_u16(), 422, "Failed for input: {:?}", test_case);
     }
+
+    app.delete_database(&app.db_name.clone()).await;
 }
