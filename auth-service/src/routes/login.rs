@@ -1,10 +1,9 @@
-use axum::http::response;
 use axum::{Json, response::IntoResponse, http::status::StatusCode, extract::State};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
 use crate::app_state::AppState;
-use crate::domain::{AuthAPIError, UserStoreError, Email, Password, LoginAttemptId, TwoFACode};
+use crate::domain::{AuthAPIError, data_stores::UserStoreError, Email, HashedPassword, LoginAttemptId, TwoFACode};
 use crate::utils::auth;
 
 pub async fn login(
@@ -14,11 +13,11 @@ pub async fn login(
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     
     let email = Email::parse(request.email)?;
-    let password = Password::parse(request.password)?;
+    HashedPassword::parse(request.password.clone()).await?;
 
     let user_store = state.user_store.write().await;
     
-    if let Err(err) = user_store.validate_user(&email, &password).await {
+    if let Err(err) = user_store.validate_user(&email, &request.password).await {
         match err {
             UserStoreError::UserNotFound => return Err(AuthAPIError::IncorrectCredentials),
             UserStoreError::InvalidCredentials => return Err(AuthAPIError::IncorrectCredentials),

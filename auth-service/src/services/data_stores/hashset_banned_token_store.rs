@@ -1,4 +1,4 @@
-use crate::domain::{BannedTokenStore, BannedTokenStoreError};
+use crate::domain::{data_stores::BannedTokenStore, data_stores::BannedTokenStoreError};
 
 use std::collections::HashSet;
 

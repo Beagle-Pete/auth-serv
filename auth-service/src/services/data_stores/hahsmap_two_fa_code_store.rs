@@ -1,5 +1,5 @@
 use crate::{
-    domain::{Email, LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
+    domain::{Email, LoginAttemptId, TwoFACode, data_stores::TwoFACodeStore, data_stores::TwoFACodeStoreError},
 };
 
 use std::collections::HashMap;

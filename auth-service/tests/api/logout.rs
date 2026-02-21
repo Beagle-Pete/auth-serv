@@ -1,11 +1,8 @@
 use auth_service::{
-    domain::{BannedTokenStore, ErrorResponse},
-    services::hashset_banned_token_store::HashsetBannedTokenStore,
+    services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore,
     utils::{auth, constants::JWT_COOKIE_NAME},
 };
 
-use axum::http::response;
-use axum_extra::extract::cookie;
 use reqwest::{Url, cookie::CookieStore};
 use tokio::sync::RwLock;
 
@@ -15,7 +12,7 @@ use crate::helpers::{TestApp, get_random_email, parse_cookie_values};
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -65,13 +62,16 @@ async fn should_return_200_if_valid_jwt_cookie() {
         .check_token(auth_cookie_login.value())
         .await
         .unwrap();
+    drop(banned_token_store);
 
     assert!(is_token_banned);
+
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -120,21 +120,25 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 400);
+
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_there_are_no_cookies() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let url = &Url::parse("http://127.0.0.1").expect("Failed to parse URL");
     let cookies = app.cookie_jar.cookies(url);
 
-    assert!(cookies.is_none())
+    assert!(cookies.is_none());
+
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let url = &Url::parse("http://127.0.0.1").expect("Failed to parse URL");
     // add a cookie
@@ -148,12 +152,14 @@ async fn should_return_400_if_jwt_cookie_missing() {
 
     let cookie_exists = cookies.contains_key(JWT_COOKIE_NAME);
 
-    assert!(!cookie_exists)
+    assert!(!cookie_exists);
+
+    app.delete_database(&app.db_name.clone()).await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let url = &Url::parse("http://127.0.0.1").expect("Failed to parse URL");
     // add invalid cookie
@@ -173,4 +179,6 @@ async fn should_return_401_if_invalid_token() {
 
     let result = auth::validate_token(cookie, banned_token_store).await;
     assert!(result.is_err());
+
+    app.delete_database(&app.db_name.clone()).await;
 }
