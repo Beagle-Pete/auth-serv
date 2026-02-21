@@ -25,6 +25,7 @@ impl UserStore for PostgresUserStore {
             INSERT INTO users (email, password_hash, requires_2fa)
             VALUES ($1, $2, $3)
             ON CONFLICT (email) DO NOTHING
+            RETURNING email
             "#,
             &user.email.as_ref(), 
             &user.password.as_ref(), 
