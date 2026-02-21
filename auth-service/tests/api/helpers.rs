@@ -1,15 +1,19 @@
 use auth_service::{
     Application, 
-    services::data_stores::hashmap_user_store::HashmapUserStore,
-    services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore,
-    services::data_stores::hahsmap_two_fa_code_store::HashMapTwoFACodeStore,
-    services::data_stores::postgres_user_store::PostgresUserStore,
-    services::mock_email_client::MockEmailClient,
-    app_state::TwoFACodeStoreType,
-    app_state::AppState,
-    utils::constants::test,
-    utils::constants::DATABASE_URL,
-    get_postgres_pool,
+    app_state::{AppState, TwoFACodeStoreType, BannedTokenStoreType}, 
+    get_postgres_pool, 
+    get_redis_client, 
+    services::{
+        data_stores::{
+            hahsmap_two_fa_code_store::HashMapTwoFACodeStore, 
+            hashmap_user_store::HashmapUserStore, 
+            hashset_banned_token_store::HashsetBannedTokenStore, 
+            postgres_user_store::PostgresUserStore,
+            redis_banned_token_store::RedisBannedTokenStore,
+        }, 
+        mock_email_client::MockEmailClient
+    }, 
+    utils::constants::{DATABASE_URL, REDIS_HOST_NAME, test}
 };
 use sqlx::{Executor, PgConnection, PgPool, postgres::{PgConnectOptions, PgPoolOptions}, Connection};
 
@@ -24,7 +28,7 @@ pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
-    pub banned_token_store: Arc<RwLock<HashsetBannedTokenStore>>,
+    pub banned_token_store: BannedTokenStoreType,
     pub two_fa_code_store: TwoFACodeStoreType,
     pub db_name: String,
     pub clean_up_called: bool,
@@ -34,9 +38,10 @@ impl TestApp {
     pub async fn new() -> Self {
         let pg_pool = configure_postgresql().await;
         let db_name = pg_pool.connect_options().get_database().unwrap().to_string();
+        let redis_conn = Arc::new(RwLock::new(configure_redis()));
 
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
-        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
+        let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(redis_conn)));
         let two_fa_code_store = Arc::new(RwLock::new(HashMapTwoFACodeStore::default()));
         let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
 
@@ -241,4 +246,11 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
         .run(&connection)
         .await
         .expect("Failed to migrate the database");
+}
+
+fn configure_redis() -> redis::Connection {
+    get_redis_client(REDIS_HOST_NAME.to_owned())
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
 }
