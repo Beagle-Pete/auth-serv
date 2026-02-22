@@ -9,7 +9,7 @@ pub type BannedTokenStoreType = Arc<RwLock<dyn BannedTokenStore>>;
 pub type TwoFACodeStoreType = Arc<RwLock<dyn TwoFACodeStore>>;
 pub type EmailClientType = Arc<RwLock<dyn EmailClient>>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     pub user_store: UserStoreType,
     pub banned_token_store: BannedTokenStoreType,
