@@ -5,6 +5,7 @@ use crate::domain::{
     Email, HashedPassword, User,
 };
 
+#[derive(Debug)]
 pub struct PostgresUserStore {
     pool: PgPool,
 }
@@ -17,9 +18,10 @@ impl PostgresUserStore {
 
 #[async_trait::async_trait]
 impl UserStore for PostgresUserStore {
+    #[tracing::instrument(name = "Adding user to PostgreSQL", skip_all)]
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         // Add user to database. 
-        // If user already exists then do nothing adn return NONE
+        // If user already exists then do nothing and return NONE
         let result = sqlx::query!(
             r#"
             INSERT INTO users (email, password_hash, requires_2fa)
@@ -42,6 +44,7 @@ impl UserStore for PostgresUserStore {
         }
     }
 
+    #[tracing::instrument(name = "Retrieving user from PostgreSQL", skip_all)]
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         let result = sqlx::query!(
             r#"
@@ -68,6 +71,8 @@ impl UserStore for PostgresUserStore {
         }
     }
     
+
+    #[tracing::instrument(name = "Validating user credentials in PostgreSQL", skip_all)]
     async fn validate_user(&self, email: &Email, raw_password: &str) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
 

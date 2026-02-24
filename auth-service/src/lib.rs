@@ -9,12 +9,13 @@ use routes as api_routes;
 use app_state::AppState;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use utils::constants::{DROPLET_IP};
+use utils::tracing::{make_span_with_request_id, on_request, on_response};
 
 use std::error::Error;
 
 use axum::{Router, routing::post, serve::Serve, http::Method};
 use tokio::net::TcpListener;
-use tower_http::{services::ServeDir, cors::CorsLayer};
+use tower_http::{services::ServeDir, cors::CorsLayer, trace::TraceLayer};
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -46,7 +47,13 @@ impl Application {
             .route("/verify-2fa", post(api_routes::verify_2fa))
             .route("/verify-token", post(api_routes::verify_token))
             .with_state(app_state)
-            .layer(cors);
+            .layer(cors)
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(make_span_with_request_id)
+                    .on_request(on_request)
+                    .on_response(on_response)
+                );
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -61,7 +68,7 @@ impl Application {
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
-        println!("listening on {}", &self.address);
+        tracing::info!("listening on {}", &self.address);
         self.server.await
     }
 }
