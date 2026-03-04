@@ -47,9 +47,8 @@ impl HashedPassword {
         let password_hash = self.as_ref().to_owned();
         let password_candidate = password_candidate.to_owned();
         
-        // TODO: Remove return type from closure. Not needed
         tokio::task::spawn_blocking(move || {
-            current_span.in_scope(|| -> Result<(), Box<dyn Error + Send + Sync>> {
+            current_span.in_scope(|| {
                 let expected_password_hash: PasswordHash<'_> = PasswordHash::new(&password_hash)?;
 
                 Argon2::default().verify_password( password_candidate.as_bytes(), &expected_password_hash)
@@ -68,9 +67,8 @@ async fn compute_password_hash(password: &str) -> Result<String, Box<dyn Error +
 
     let password = password.to_owned();
 
-    // TODO: Remove return type from closure. Not needed
     let password_hash = tokio::task::spawn_blocking(move || {
-        current_span.in_scope(|| -> Result<String, Box<dyn Error + Send + Sync>> {
+        current_span.in_scope(|| {
             let salt: SaltString = SaltString::generate(&mut OsRng);
             let password_hash = Argon2::new(
                 Algorithm::Argon2id,
@@ -83,9 +81,9 @@ async fn compute_password_hash(password: &str) -> Result<String, Box<dyn Error +
             Ok(password_hash)
         }) 
     })
-    .await??;
+    .await;
 
-    Ok(password_hash)
+    password_hash?
 }
 
 #[cfg(test)]
