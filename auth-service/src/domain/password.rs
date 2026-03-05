@@ -2,9 +2,8 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version,
 };
-use std::error::Error;
 use super::AuthAPIError;
-use color_eyre::eyre::{eyre, Context, Result};
+use color_eyre::eyre::Result;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HashedPassword(String);
@@ -24,7 +23,7 @@ impl HashedPassword {
 
         let password_hash = compute_password_hash(&password)
             .await
-            .map_err(|e| AuthAPIError::UnexpectedError(e))?;
+            .map_err(AuthAPIError::UnexpectedError)?;
 
         Ok(Self(password_hash))
     }

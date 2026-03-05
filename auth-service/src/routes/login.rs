@@ -58,7 +58,7 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
     let content = two_fa_code.as_ref();
     email_client.send_email(email.clone(), subject, content)
         .await
-        .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
+        .map_err(AuthAPIError::UnexpectedError)?;
 
     // Add 2FA code to store
     let mut two_fa_code_store = state.two_fa_code_store.write().await;
