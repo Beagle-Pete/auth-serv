@@ -1,4 +1,5 @@
 use crate::domain::{data_stores::UserStore, data_stores::UserStoreError, User, Email};
+use color_eyre::eyre::Result;
 
 use std::collections::HashMap;
 

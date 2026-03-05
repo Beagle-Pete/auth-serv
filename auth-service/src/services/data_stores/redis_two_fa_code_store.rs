@@ -42,12 +42,12 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
 
         let two_fa_tuple = TwoFATuple(login_attempt_id.as_ref().to_owned(), code.as_ref().to_owned());
         let two_fa_tuple = serde_json::to_string(&two_fa_tuple)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
         let mut conn_lock = self.conn.write().await;
 
         conn_lock.set_ex(key, two_fa_tuple, TEN_MINUTES_IN_SECONDS)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)
+            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))
     }
 
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
@@ -60,7 +60,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         let mut conn_lock = self.conn.write().await;
 
         conn_lock.del(key)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)
+            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))
     }
 
     async fn get_code(
@@ -82,13 +82,13 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .map_err(|_| TwoFACodeStoreError::LoginAttempIdNotFound)?;
 
         let two_fa_tuple: TwoFATuple = serde_json::from_str(&val)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
         let login_attempt_id = LoginAttemptId::parse(two_fa_tuple.0)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
         let two_fa_code = TwoFACode::parse(two_fa_tuple.1)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
         Ok((login_attempt_id, two_fa_code))
     }

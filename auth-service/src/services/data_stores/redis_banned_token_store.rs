@@ -29,7 +29,7 @@ impl BannedTokenStore for RedisBannedTokenStore {
         let mut conn_lock = self.conn.write().await;
 
         conn_lock.set_ex(key, token, TOKEN_TTL_SECONDS as u64)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+            .map_err(|e| BannedTokenStoreError::UnexpectedError(e.into()))
     }
 
     async fn check_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
@@ -37,7 +37,7 @@ impl BannedTokenStore for RedisBannedTokenStore {
 
         let mut conn_lock = self.conn.write().await;
         conn_lock.exists(key)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+            .map_err(|e| BannedTokenStoreError::UnexpectedError(e.into()))
     }
 }
 

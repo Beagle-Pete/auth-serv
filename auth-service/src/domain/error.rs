@@ -1,16 +1,26 @@
 use axum::{Json, http::status::StatusCode, response::{IntoResponse, Response}};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use color_eyre::eyre::Report;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum AuthAPIError {
+    #[error("Use already exists")]
     UserAlreadyExists,
+    #[error("Invalid credentials")]
     InvalidCredentials,
+    #[error("Incorrect credentials")]
     IncorrectCredentials,
+    #[error("Missing token")]
     MissingToken,
+    #[error("Invalid token")]
     InvalidToken,
+    #[error("Invalid Login Attempt ID")]
     InvalidLoginAttempId,
+    #[error("Invalid 2FA Code")]
     InvalidTwoFACode,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
 }
 
 impl IntoResponse for AuthAPIError {
@@ -23,7 +33,7 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid token"),
             AuthAPIError::InvalidLoginAttempId => (StatusCode::BAD_REQUEST, "Invalid login attempt id"),
             AuthAPIError::InvalidTwoFACode => (StatusCode::BAD_REQUEST, "Invalid 2FA code"),
-            AuthAPIError::UnexpectedError => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpetected error"),
+            AuthAPIError::UnexpectedError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpetected error"),
         };
 
         let body = Json(ErrorResponse {
@@ -31,6 +41,22 @@ impl IntoResponse for AuthAPIError {
         });
 
         (status, body).into_response()
+    }
+}
+
+impl PartialEq for AuthAPIError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::UserAlreadyExists, Self::UserAlreadyExists)
+                | (Self::InvalidCredentials, Self::InvalidCredentials)
+                | (Self::IncorrectCredentials, Self::IncorrectCredentials)
+                | (Self::MissingToken, Self::MissingToken)
+                | (Self::InvalidToken, Self::InvalidToken)
+                | (Self::InvalidLoginAttempId, Self::InvalidLoginAttempId)
+                | (Self::InvalidTwoFACode, Self::InvalidTwoFACode)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
     }
 }
 

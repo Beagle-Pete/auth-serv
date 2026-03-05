@@ -2,6 +2,8 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use color_eyre::eyre::{Report, eyre};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 use crate::app_state::BannedTokenStoreType;
@@ -22,10 +24,12 @@ fn create_auth_cookie(token: String) -> Cookie<'static> {
         .build()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum GenerateTokenError {
+    #[error("Token error: {0}")]
     TokenError(jsonwebtoken::errors::Error),
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
 }
 
 // This value determines how long the JWT auth token is valid for
@@ -34,18 +38,18 @@ pub const TOKEN_TTL_SECONDS: i64 = 600; // 10 minutes
 // Create JWT auth token
 fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
     let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
-        .ok_or(GenerateTokenError::UnexpectedError)?;
+        .ok_or(GenerateTokenError::UnexpectedError(eyre!("Failed to convert to seconds")))?;
 
     // Create JWT expiration time
     let exp = Utc::now()
         .checked_add_signed(delta)
-        .ok_or(GenerateTokenError::UnexpectedError)?
+        .ok_or(GenerateTokenError::UnexpectedError(eyre!("Failed to add time delta to current time")))?
         .timestamp();
 
     // Cast exp to a usize, which is what Claims expects
     let exp: usize = exp
         .try_into()
-        .map_err(|_| GenerateTokenError::UnexpectedError)?;
+        .map_err(|_| GenerateTokenError::UnexpectedError(eyre!("Failed converting JWT expiration time to usize")))?;
 
     let sub = email.as_ref().to_owned();
 

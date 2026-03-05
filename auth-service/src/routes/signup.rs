@@ -18,7 +18,7 @@ pub async fn signup(State(state): State<AppState>, Json(request): Json<SignupReq
             {
                 match err {
                     UserStoreError::UserAlreadyExists => AuthAPIError::UserAlreadyExists,
-                    _ => AuthAPIError::UnexpectedError,
+                    _ => AuthAPIError::UnexpectedError(err.into()),
                 }
             }
         )?;

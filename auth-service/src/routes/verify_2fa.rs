@@ -35,7 +35,7 @@ pub async fn verify_2fa(
 
     // Create JWT token
     let auth_cookie = auth::generate_auth_cookie(&email)
-        .map_err(|_| {AuthAPIError::UnexpectedError})?;
+        .map_err(|e| {AuthAPIError::UnexpectedError(e.into())})?;
     let updated_jar = jar.add(auth_cookie);
 
     // Remove 2FA code from store
@@ -43,7 +43,7 @@ pub async fn verify_2fa(
         let mut two_fa_store = state.two_fa_code_store.write().await;
         two_fa_store.remove_code(&email)
             .await
-            .map_err(|_| AuthAPIError::UnexpectedError)?;
+            .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
     }
 
     Ok((updated_jar, StatusCode::OK))

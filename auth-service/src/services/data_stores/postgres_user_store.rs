@@ -1,4 +1,5 @@
 use sqlx::PgPool;
+use color_eyre::eyre::Result;
 
 use crate::domain::{
     data_stores::{UserStore, UserStoreError},
@@ -35,7 +36,7 @@ impl UserStore for PostgresUserStore {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|_| UserStoreError::UnexpectedError)?;
+        .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         // TODO: Should logic to check if user exist live in the signup route?
         match result {
@@ -56,14 +57,14 @@ impl UserStore for PostgresUserStore {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|_| UserStoreError::UnexpectedError)?;
+        .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         match result {
             Some(row) => {
                 let email = Email::parse(row.email)
-                    .map_err(|_| UserStoreError::UnexpectedError)?;
+                    .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
                 let password = HashedPassword::parse_password_hash(row.password_hash)
-                    .map_err(|_| UserStoreError::UnexpectedError)?;
+                    .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
                 let user = User::new(email, password, row.requires_2fa);
                 Ok(user)
             },

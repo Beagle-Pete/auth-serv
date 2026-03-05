@@ -4,6 +4,7 @@ use argon2::{
 };
 use std::error::Error;
 use super::AuthAPIError;
+use color_eyre::eyre::{eyre, Context, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HashedPassword(String);
@@ -23,15 +24,15 @@ impl HashedPassword {
 
         let password_hash = compute_password_hash(&password)
             .await
-            .map_err(|_| AuthAPIError::UnexpectedError)?;
+            .map_err(|e| AuthAPIError::UnexpectedError(e))?;
 
         Ok(Self(password_hash))
     }
 
-    pub fn parse_password_hash(hash: String) -> Result<Self, String>{
+    pub fn parse_password_hash(hash: String) -> Result<Self, AuthAPIError>{
         match PasswordHash::new(&hash) {
             Ok(_) => Ok(Self(hash)),
-            Err(_) => Err("tt".to_owned()),
+            Err(e) => Err(AuthAPIError::UnexpectedError(e.into())),
         }
     }
     
@@ -39,7 +40,7 @@ impl HashedPassword {
     pub async fn verify_raw_password(
         &self,
         password_candidate: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> Result<()> {
         // Retrieve the current span from the tracing context
         // Span represents the execution context to verify the password
         let current_span = tracing::Span::current();
@@ -60,7 +61,7 @@ impl HashedPassword {
 }
 
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+async fn compute_password_hash(password: &str) -> Result<String> {
     // Retrieve the current span from the tracing context
     // Span represents the execution context for the compute_password_hash function
     let current_span = tracing::Span::current();

@@ -21,7 +21,7 @@ pub async fn login(
         match err {
             UserStoreError::UserNotFound => return Err(AuthAPIError::IncorrectCredentials),
             UserStoreError::InvalidCredentials => return Err(AuthAPIError::IncorrectCredentials),
-            _ => return Err(AuthAPIError::UnexpectedError)
+            _ => return Err(AuthAPIError::UnexpectedError(err.into()))
         }
     }
     
@@ -29,7 +29,7 @@ pub async fn login(
         .map_err(|err| {
             match err {
                 UserStoreError::UserNotFound => AuthAPIError::InvalidCredentials,
-                _ => AuthAPIError::UnexpectedError
+                _ => AuthAPIError::UnexpectedError(err.into())
             }
         })?;
 
@@ -58,13 +58,13 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
     let content = two_fa_code.as_ref();
     email_client.send_email(email.clone(), subject, content)
         .await
-        .map_err(|_| AuthAPIError::UnexpectedError)?;
+        .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
 
     // Add 2FA code to store
     let mut two_fa_code_store = state.two_fa_code_store.write().await;
     two_fa_code_store.add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
         .await
-        .map_err(|_| AuthAPIError::UnexpectedError)?;
+        .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
     
     // Create JSON response body with 2FA
     let response_json = TwoFactorAuthResponse {
@@ -78,7 +78,7 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
 
 async fn handle_no_2fa(email: &Email, jar: CookieJar) -> Result<(CookieJar, StatusCode, Json<LoginResponse>), AuthAPIError> {
     let auth_cookie = auth::generate_auth_cookie(email)
-        .map_err(|_| {AuthAPIError::UnexpectedError})?;
+        .map_err(|e| {AuthAPIError::UnexpectedError(e.into())})?;
 
     let updated_jar = jar.add(auth_cookie);
 
