@@ -3,7 +3,7 @@ use argon2::{
     Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version,
 };
 use super::AuthAPIError;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Context, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HashedPassword(String);
@@ -51,8 +51,8 @@ impl HashedPassword {
             current_span.in_scope(|| {
                 let expected_password_hash: PasswordHash<'_> = PasswordHash::new(&password_hash)?;
 
-                Argon2::default().verify_password( password_candidate.as_bytes(), &expected_password_hash)
-                    .map_err(|e| e.into())
+                Argon2::default().verify_password(password_candidate.as_bytes(), &expected_password_hash)
+                    .wrap_err("failed to verify password hash")
             })
         })
         .await?

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::app_state::AppState;
 use crate::domain::{AuthAPIError, User, data_stores::UserStoreError, Email, HashedPassword};
 
-#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
+#[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup(State(state): State<AppState>, Json(request): Json<SignupRequest>) -> Result<impl IntoResponse, AuthAPIError> {
     let email = Email::parse(request.email)?;
     let password = HashedPassword::parse(request.password).await?;
