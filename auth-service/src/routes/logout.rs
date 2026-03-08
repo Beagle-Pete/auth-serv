@@ -11,6 +11,7 @@ use crate::{
     AppState,
 };
 
+#[tracing::instrument(name = "Logout", skip_all)]
 pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     // Retrieve JWT cookie from the `CookieJar`
     let cookie = jar.get(JWT_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;

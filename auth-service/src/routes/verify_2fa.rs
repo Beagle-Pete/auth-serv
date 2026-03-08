@@ -9,6 +9,7 @@ use crate::domain::{AuthAPIError, Email, LoginAttemptId, TwoFACode};
 use crate::AppState;
 use crate::utils::auth;
 
+#[tracing::instrument(name = "Verify_2FA", skip_all)]
 pub async fn verify_2fa(
     State(state): State<AppState>,
     jar: CookieJar,

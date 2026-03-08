@@ -6,6 +6,7 @@ use crate::app_state::AppState;
 use crate::domain::{AuthAPIError, data_stores::UserStoreError, Email, HashedPassword, LoginAttemptId, TwoFACode};
 use crate::utils::auth;
 
+#[tracing::instrument(name = "Login", skip_all)]
 pub async fn login(
     State(state): State<AppState>, 
     jar: CookieJar,
@@ -49,6 +50,7 @@ pub struct LoginRequest {
     pub password: String,
 }
 
+#[tracing::instrument(name = "Handle_2FA", skip_all)]
 async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(CookieJar, StatusCode, Json<LoginResponse>), AuthAPIError> {
 
     let login_attempt_id = LoginAttemptId::default();
@@ -78,6 +80,7 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
     Ok((jar, StatusCode::PARTIAL_CONTENT, response.into()))
 }
 
+#[tracing::instrument(name = "Handle_no_2FA", skip_all)]
 async fn handle_no_2fa(email: &Email, jar: CookieJar) -> Result<(CookieJar, StatusCode, Json<LoginResponse>), AuthAPIError> {
     let auth_cookie = auth::generate_auth_cookie(email)
         .map_err(|e| {AuthAPIError::UnexpectedError(e.into())})?;
