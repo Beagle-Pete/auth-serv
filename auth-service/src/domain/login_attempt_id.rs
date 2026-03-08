@@ -1,12 +1,12 @@
-use super::AuthAPIError;
+use color_eyre::eyre::{Result, eyre};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, AuthAPIError> {
+    pub fn parse(id: String) -> Result<Self> {
         if uuid::Uuid::try_parse(&id).is_err() {
-            return Err(AuthAPIError::InvalidLoginAttempId);
+            return Err(eyre!("Invalid login attempt ID"));
         }
 
         Ok(LoginAttemptId(id))

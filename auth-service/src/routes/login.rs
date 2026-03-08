@@ -12,7 +12,9 @@ pub async fn login(
     Json(request): Json<LoginRequest>
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     
-    let email = Email::parse(request.email)?;
+    let email = Email::parse(request.email)
+        .map_err(|_| AuthAPIError::InvalidCredentials)?;
+    
     HashedPassword::parse(request.password.clone()).await?;
 
     let user_store = state.user_store.write().await;

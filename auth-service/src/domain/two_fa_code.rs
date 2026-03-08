@@ -1,4 +1,4 @@
-use super::AuthAPIError;
+use color_eyre::eyre::{Result, eyre};
 
 use rand::prelude::*;
 
@@ -6,16 +6,16 @@ use rand::prelude::*;
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, AuthAPIError> {
+    pub fn parse(code: String) -> Result<Self> {
         match code.parse::<usize>() {
             Ok(_) => {
                 if code.len() != 6 {
-                    return Err(AuthAPIError::InvalidTwoFACode);
+                    return Err(eyre!("Invalid 2FA code"));
                 }
 
                 Ok(TwoFACode(code))
             },
-            Err(_) => Err(AuthAPIError::InvalidTwoFACode),
+            Err(_) => Err(eyre!("Invalid 2FA code")),
         }        
     }
 }

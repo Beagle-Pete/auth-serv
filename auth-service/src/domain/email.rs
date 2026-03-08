@@ -1,4 +1,4 @@
-use super::AuthAPIError;
+use color_eyre::eyre::{Result, eyre};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Email(String);
@@ -10,11 +10,11 @@ impl AsRef<str> for Email {
 }
 
 impl Email {
-    pub fn parse(email: String) -> Result<Self, AuthAPIError> {
+    pub fn parse(email: String) -> Result<Self> {
 
         // email must have @
         if !email.contains("@") {
-            return Err(AuthAPIError::InvalidCredentials);
+            return Err(eyre!("failed to parse email"));
         }
 
         Ok(Self(email))
@@ -48,7 +48,8 @@ mod tests {
         ];
 
         for test_case in test_cases {
-            assert_eq!(test_case, Err(AuthAPIError::InvalidCredentials));
+            assert!(test_case.is_err());
+            // assert_eq!(test_case, Err(AuthAPIError::InvalidCredentials));
         }
     }
 }
