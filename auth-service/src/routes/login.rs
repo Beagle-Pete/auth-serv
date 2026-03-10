@@ -1,6 +1,7 @@
 use axum::{Json, response::IntoResponse, http::status::StatusCode, extract::State};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
+use secrecy::{ExposeSecret, SecretString};
 
 use crate::app_state::AppState;
 use crate::domain::{AuthAPIError, data_stores::UserStoreError, Email, HashedPassword, LoginAttemptId, TwoFACode};
@@ -20,7 +21,7 @@ pub async fn login(
 
     let user_store = state.user_store.write().await;
     
-    if let Err(err) = user_store.validate_user(&email, &request.password).await {
+    if let Err(err) = user_store.validate_user(&email, request.password.expose_secret()).await {
         match err {
             UserStoreError::UserNotFound => return Err(AuthAPIError::IncorrectCredentials),
             UserStoreError::InvalidCredentials => return Err(AuthAPIError::IncorrectCredentials),
@@ -46,8 +47,8 @@ pub async fn login(
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
+    pub email: SecretString,
+    pub password: SecretString,
 }
 
 #[tracing::instrument(name = "Handle_2FA", skip_all)]

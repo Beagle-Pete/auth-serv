@@ -1,6 +1,7 @@
 use auth_service::domain::{Email, ErrorResponse};
 use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::utils::constants::JWT_COOKIE_NAME;
+use secrecy::{ExposeSecret, SecretString};
 
 use crate::helpers::{TestApp, get_random_email};
 
@@ -47,12 +48,12 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let mut app = TestApp::new().await;
 
-    let random_email = get_random_email();
+    let random_email = SecretString::new(get_random_email().into_boxed_str());
     let email = Email::parse(random_email.clone()).unwrap();
 
     // Signup wih 2FA
     let signup_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
         "requires2FA": true
     });
@@ -63,7 +64,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     // Login
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
     });
 

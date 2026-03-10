@@ -1,5 +1,6 @@
 use axum::{Json, response::IntoResponse, http::status::StatusCode, extract::State};
 use serde::{Deserialize, Serialize};
+use secrecy::SecretString;
 
 use crate::app_state::AppState;
 use crate::domain::{AuthAPIError, User, data_stores::UserStoreError, Email, HashedPassword};
@@ -33,8 +34,8 @@ pub async fn signup(State(state): State<AppState>, Json(request): Json<SignupReq
 
 #[derive(Deserialize, Debug)]
 pub struct SignupRequest {
-    pub email: String,
-    pub password: String,
+    pub email: SecretString,
+    pub password: SecretString,
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
 }

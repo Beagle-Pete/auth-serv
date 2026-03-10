@@ -21,6 +21,7 @@ use std::{
 use tokio::sync::RwLock;
 use uuid::Uuid;
 use reqwest::cookie::Jar;
+use secrecy::{ExposeSecret, SecretString};
 
 pub struct TestApp {
     pub address: String,
@@ -126,7 +127,7 @@ impl TestApp {
     }
 
     pub async fn delete_database(&mut self, db_name: &str) {
-        let postgresql_conn_url: String = DATABASE_URL.to_owned();
+        let postgresql_conn_url: String = DATABASE_URL.expose_secret().to_owned();
 
         let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
             .expect("Failed to parse PostgreSQL connection string");
@@ -202,7 +203,7 @@ pub fn get_all_cookies(response: &reqwest::Response) -> HashMap<String, String> 
 }
 
 async fn configure_postgresql() -> PgPool {
-    let postgresql_conn_url = DATABASE_URL.to_owned();
+    let postgresql_conn_url = DATABASE_URL.expose_secret().to_owned();
 
     // We are creating a new database for each test case, and we need to ensure each database has a unique name!
     let db_name = Uuid::new_v4().to_string();
@@ -210,6 +211,7 @@ async fn configure_postgresql() -> PgPool {
     configure_database(&postgresql_conn_url, &db_name).await;
 
     let postgresql_conn_url_with_db = format!("{}/{}", postgresql_conn_url, db_name);
+    let postgresql_conn_url_with_db = SecretString::new(postgresql_conn_url_with_db.into_boxed_str());
 
     // Create a new connection pool and return it
     get_postgres_pool(&postgresql_conn_url_with_db)

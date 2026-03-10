@@ -108,13 +108,15 @@ pub struct Claims {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::SecretString;
     use tokio::sync::RwLock;
     use std::sync::Arc;
     use crate::services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore;
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email_secret = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(email_secret).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
         assert_eq!(cookie.value().split('.').count(), 3);
@@ -136,14 +138,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email_secret = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(email_secret).unwrap();
         let result = generate_auth_token(&email).unwrap();
         assert_eq!(result.split('.').count(), 3);
     }
 
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email_secret = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(email_secret).unwrap();
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
 
         let token = generate_auth_token(&email).unwrap();

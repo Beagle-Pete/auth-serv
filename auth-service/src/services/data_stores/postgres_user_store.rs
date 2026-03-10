@@ -1,5 +1,6 @@
 use sqlx::PgPool;
 use color_eyre::eyre::Result;
+use secrecy::{ExposeSecret, SecretString};
 
 use crate::domain::{
     data_stores::{UserStore, UserStoreError},
@@ -61,9 +62,12 @@ impl UserStore for PostgresUserStore {
 
         match result {
             Some(row) => {
-                let email = Email::parse(row.email)
+                let email_secret = SecretString::new(row.email.into_boxed_str());
+                let email = Email::parse(email_secret)
                     .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
-                let password = HashedPassword::parse_password_hash(row.password_hash)
+
+                let password_secret = SecretString::new(row.password_hash.into_boxed_str());
+                let password = HashedPassword::parse_password_hash(password_secret)
                     .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
                 let user = User::new(email, password, row.requires_2fa);
                 Ok(user)
@@ -77,8 +81,9 @@ impl UserStore for PostgresUserStore {
     async fn validate_user(&self, email: &Email, raw_password: &str) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
 
+        let password_secret = SecretString::new(raw_password.to_owned().into_boxed_str());
         user.password
-            .verify_raw_password(raw_password)
+            .verify_raw_password(&password_secret)
             .await
             .map_err(|_| UserStoreError::InvalidCredentials)
     }

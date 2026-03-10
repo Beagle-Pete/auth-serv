@@ -1,19 +1,34 @@
 use color_eyre::eyre::{Result, eyre};
+use secrecy::{ExposeSecret, SecretString};
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Email(String);
+#[derive(Debug, Clone)]
+pub struct Email(SecretString);
 
 impl AsRef<str> for Email {
     fn as_ref(&self) -> &str {
-        &self.0
+        &self.0.expose_secret()
+    }
+}
+
+impl PartialEq for Email {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+impl Eq for Email {}
+
+impl std::hash::Hash for Email {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.expose_secret().hash(state);
     }
 }
 
 impl Email {
-    pub fn parse(email: String) -> Result<Self> {
+    pub fn parse(email: SecretString) -> Result<Self> {
 
         // email must have @
-        if !email.contains("@") {
+        if !email.expose_secret().contains("@") {
             return Err(eyre!("failed to parse email"));
         }
 
@@ -27,14 +42,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_valid_input() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let raw_email = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(raw_email).unwrap();
 
-        assert_eq!(email.0, "test@example.com".to_owned());
+        assert_eq!(email.0.expose_secret(), "test@example.com".to_owned());
     }
 
     #[tokio::test]
     async fn test_asref_impl() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let raw_email = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(raw_email).unwrap();
         let email = email.as_ref();
 
         assert_eq!(email, "test@example.com");
@@ -44,7 +61,7 @@ mod tests {
     async fn test_invalid_input() {
 
         let test_cases = [
-            Email::parse("testexample.com".to_owned()),
+            Email::parse(SecretString::new("testexample.com".to_owned().into_boxed_str())),
         ];
 
         for test_case in test_cases {

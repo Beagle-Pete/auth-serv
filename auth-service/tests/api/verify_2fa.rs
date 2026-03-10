@@ -1,4 +1,5 @@
 use auth_service::{domain::{Email, LoginAttemptId, TwoFACode}, utils::constants::JWT_COOKIE_NAME};
+use secrecy::{ExposeSecret, SecretString};
 
 use crate::helpers::{TestApp, get_all_cookies, get_random_email};
 
@@ -6,12 +7,12 @@ use crate::helpers::{TestApp, get_all_cookies, get_random_email};
 async fn should_return_200_if_correct_code() {
     let mut app = TestApp::new().await;
 
-    let random_email = get_random_email();
+    let random_email = SecretString::new(get_random_email().into_boxed_str());
     let email = Email::parse(random_email.clone()).unwrap();
 
     // Signup 
     let signup_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
         "requires2FA": true
     });
@@ -22,7 +23,7 @@ async fn should_return_200_if_correct_code() {
 
     // Login
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
     });
 
@@ -36,7 +37,7 @@ async fn should_return_200_if_correct_code() {
     drop(two_fa_code_store);
 
     let verify_body = serde_json::json!({
-            "email": random_email,
+            "email": random_email.expose_secret(),
             "loginAttemptId": login_attempt_id.as_ref(),
             "2FACode": two_fa_code.as_ref(),
     });
@@ -107,12 +108,12 @@ async fn should_return_400_if_invalid_input() {
 async fn should_return_401_if_incorrect_credentials() {
     let mut app = TestApp::new().await;
 
-    let random_email = get_random_email();
+    let random_email = SecretString::new(get_random_email().into_boxed_str());
     let email = Email::parse(random_email.clone()).unwrap();
 
     // Signup 
     let signup_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
         "requires2FA": true
     });
@@ -123,7 +124,7 @@ async fn should_return_401_if_incorrect_credentials() {
 
     // Login
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
     });
 
@@ -137,7 +138,7 @@ async fn should_return_401_if_incorrect_credentials() {
     drop(two_fa_code_store);
 
     let verify_body = serde_json::json!({
-            "email": random_email,
+            "email": random_email.expose_secret(),
             "loginAttemptId": login_attempt_id.as_ref(),
             "2FACode": TwoFACode::default().as_ref(),
     });
@@ -146,7 +147,7 @@ async fn should_return_401_if_incorrect_credentials() {
     assert_eq!(response.status().as_u16(), 401);
 
     let verify_body = serde_json::json!({
-            "email": random_email,
+            "email": random_email.expose_secret(),
             "loginAttemptId": LoginAttemptId::default().as_ref(),
             "2FACode": two_fa_code.as_ref(),
     });
@@ -161,12 +162,12 @@ async fn should_return_401_if_incorrect_credentials() {
 async fn should_return_401_if_old_code() {
     let mut app = TestApp::new().await;
 
-    let random_email = get_random_email();
+    let random_email = SecretString::new(get_random_email().into_boxed_str());
     let email = Email::parse(random_email.clone()).unwrap();
 
     // Signup 
     let signup_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
         "requires2FA": true
     });
@@ -177,7 +178,7 @@ async fn should_return_401_if_old_code() {
 
     // First Login
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
     });
 
@@ -192,7 +193,7 @@ async fn should_return_401_if_old_code() {
 
     // Second Login
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
     });
 
@@ -202,7 +203,7 @@ async fn should_return_401_if_old_code() {
 
     // Verify 2FA
     let verify_body = serde_json::json!({
-            "email": random_email,
+            "email": random_email.expose_secret(),
             "loginAttemptId": login_attempt_id_one.as_ref(),
             "2FACode": two_fa_code_one.as_ref(),
     });
@@ -217,12 +218,12 @@ async fn should_return_401_if_old_code() {
 async fn should_return_401_if_same_code_twice() {  
     let mut app = TestApp::new().await;
 
-    let random_email = get_random_email();
+    let random_email = SecretString::new(get_random_email().into_boxed_str());
     let email = Email::parse(random_email.clone()).unwrap();
 
     // Signup 
     let signup_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
         "requires2FA": true
     });
@@ -233,7 +234,7 @@ async fn should_return_401_if_same_code_twice() {
 
     // Login
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.expose_secret(),
         "password": "password123",
     });
 
@@ -247,7 +248,7 @@ async fn should_return_401_if_same_code_twice() {
     drop(two_fa_code_store);
 
     let verify_body = serde_json::json!({
-            "email": random_email,
+            "email": random_email.expose_secret(),
             "loginAttemptId": login_attempt_id.as_ref(),
             "2FACode": two_fa_code.as_ref(),
     });
