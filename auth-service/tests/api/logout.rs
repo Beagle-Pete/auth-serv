@@ -5,6 +5,7 @@ use auth_service::{
 
 use reqwest::{Url, cookie::CookieStore};
 use tokio::sync::RwLock;
+use secrecy::SecretString;
 
 use std::sync::Arc;
 
@@ -57,9 +58,10 @@ async fn should_return_200_if_valid_jwt_cookie() {
         assert_eq!(cookie.value(), "");
     }
 
+    let auth_cookie_login_secret = SecretString::new(auth_cookie_login.value().to_owned().into_boxed_str());
     let banned_token_store = app.banned_token_store.write().await;
     let is_token_banned = banned_token_store
-        .check_token(auth_cookie_login.value())
+        .check_token(&auth_cookie_login_secret)
         .await
         .unwrap();
     drop(banned_token_store);

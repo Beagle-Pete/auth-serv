@@ -4,6 +4,7 @@ use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use color_eyre::eyre::{Context, ContextCompat, Report, Result, eyre};
+use secrecy::{ExposeSecret, SecretString};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 use crate::app_state::BannedTokenStoreType;
@@ -68,10 +69,11 @@ pub async fn validate_token(
     banned_token_store: BannedTokenStoreType,
 ) -> Result<Claims> {
     // Check if token is in banned token store
+    let token = SecretString::new(token.to_owned().into_boxed_str());
     let token_is_banned = banned_token_store
         .read()
         .await
-        .check_token(token)
+        .check_token(&token)
         .await?;
 
     if token_is_banned {
@@ -80,8 +82,8 @@ pub async fn validate_token(
 
     // Decode JWT using secret in environmental variable
     decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
+        token.expose_secret(),
+        &DecodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
@@ -94,7 +96,7 @@ fn create_token(claims: &Claims) -> Result<String> {
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
     )
     .wrap_err("Failed to create token")
 }

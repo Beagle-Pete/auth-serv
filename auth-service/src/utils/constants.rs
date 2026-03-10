@@ -4,7 +4,7 @@ use std::env as std_env;
 use secrecy::SecretString;
 
 lazy_static! {
-    pub static ref JWT_SECRET: String = set_token(env::JWT_SECRET_ENV_VAR);
+    pub static ref JWT_SECRET: SecretString = SecretString::new(set_token(env::JWT_SECRET_ENV_VAR).into_boxed_str());
     pub static ref DROPLET_IP: String = set_token(env::DROPLET_IP_ENV_VAR);
     pub static ref DATABASE_URL: SecretString = SecretString::new(set_token(env::DATABASE_URL_ENV_VAR).into_boxed_str());
     pub static ref REDIS_HOST_NAME: String = set_token_with_default(env::REDIS_HOST_NAME_ENV_VAR, DEFAULT_REDIS_HOSTNAME);

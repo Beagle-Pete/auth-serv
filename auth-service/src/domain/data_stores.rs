@@ -1,6 +1,7 @@
 use super::{User, Email, LoginAttemptId, TwoFACode};
 use thiserror::Error;
 use color_eyre::eyre::Report;
+use secrecy::SecretString;
 
 // User Store
 #[derive(Debug, Error)]
@@ -53,9 +54,9 @@ pub enum BannedTokenStoreError {
 
 #[async_trait::async_trait]
 pub trait BannedTokenStore: Send + Sync {
-    async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError>;
+    async fn add_token(&mut self, token: &SecretString) -> Result<(), BannedTokenStoreError>;
 
-    async fn check_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn check_token(&self, token: &SecretString) -> Result<bool, BannedTokenStoreError>;
 }
 
 impl PartialEq for BannedTokenStoreError {
