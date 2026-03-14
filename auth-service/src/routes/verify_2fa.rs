@@ -3,7 +3,7 @@ use axum::http::status::StatusCode;
 use axum::Json;
 use axum::extract::State;
 use axum_extra::extract::CookieJar;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use secrecy::SecretString;
 
 use crate::domain::{AuthAPIError, Email, LoginAttemptId, TwoFACode};
@@ -40,7 +40,7 @@ pub async fn verify_2fa(
 
     // Create JWT token
     let auth_cookie = auth::generate_auth_cookie(&email)
-        .map_err(|e| {AuthAPIError::UnexpectedError(e.into())})?;
+        .map_err(|e| {AuthAPIError::UnexpectedError(e)})?;
     let updated_jar = jar.add(auth_cookie);
 
     // Remove 2FA code from store

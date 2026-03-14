@@ -11,7 +11,7 @@ pub struct HashedPassword(SecretString);
 
 impl AsRef<str> for HashedPassword {
     fn as_ref(&self) -> &str {
-        &self.0.expose_secret()
+        self.0.expose_secret()
     }
 }
 
@@ -36,7 +36,7 @@ impl HashedPassword {
     }
 
     pub fn parse_password_hash(hash: SecretString) -> Result<Self, AuthAPIError>{
-        match PasswordHash::new(&hash.expose_secret()) {
+        match PasswordHash::new(hash.expose_secret()) {
             Ok(_) => Ok(Self(hash)),
             Err(e) => Err(AuthAPIError::UnexpectedError(e.into())),
         }
@@ -74,7 +74,7 @@ async fn compute_password_hash(password: &SecretString) -> Result<SecretString> 
 
     let password = password.to_owned();
 
-    let password_hash = tokio::task::spawn_blocking(move || {
+    tokio::task::spawn_blocking(move || {
         current_span.in_scope(|| {
             let salt: SaltString = SaltString::generate(&mut OsRng);
             let password_hash = Argon2::new(
@@ -88,9 +88,7 @@ async fn compute_password_hash(password: &SecretString) -> Result<SecretString> 
             Ok(SecretString::new(password_hash.into_boxed_str()))
         }) 
     })
-    .await?;
-
-    password_hash
+    .await?
 }
 
 #[cfg(test)]

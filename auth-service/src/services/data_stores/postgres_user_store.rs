@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 use color_eyre::eyre::Result;
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::SecretString;
 
 use crate::domain::{
     data_stores::{UserStore, UserStoreError},
@@ -64,7 +64,7 @@ impl UserStore for PostgresUserStore {
             Some(row) => {
                 let email_secret = SecretString::new(row.email.into_boxed_str());
                 let email = Email::parse(email_secret)
-                    .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
+                    .map_err(UserStoreError::UnexpectedError)?;
 
                 let password_secret = SecretString::new(row.password_hash.into_boxed_str());
                 let password = HashedPassword::parse_password_hash(password_secret)

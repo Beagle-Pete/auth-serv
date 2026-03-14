@@ -103,14 +103,14 @@ mod tests {
 
         let _ = users.add_user(new_user.clone()).await;
 
-        let validate_user1 = users.validate_user(&new_user.email, &password_secret.expose_secret().as_ref()).await;
+        let validate_user1 = users.validate_user(&new_user.email, password_secret.expose_secret().as_ref()).await;
 
         let raw_password2 = "wrong_password".to_owned();
         let validate_user2 = users.validate_user(&new_user.email, &raw_password2).await;
 
         let email3_secret = SecretString::new("non-existent-user@example.com".to_owned().into_boxed_str());
         let email3 = Email::parse(email3_secret).unwrap();
-        let validate_user3 = users.validate_user(&email3, &password_secret.expose_secret().as_ref()).await;
+        let validate_user3 = users.validate_user(&email3, password_secret.expose_secret().as_ref()).await;
 
         assert_eq!(validate_user1, Ok(()));
         assert_eq!(validate_user2, Err(UserStoreError::InvalidCredentials));

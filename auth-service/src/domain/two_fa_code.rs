@@ -36,7 +36,7 @@ impl Default for TwoFACode {
 
 impl AsRef<str> for TwoFACode {
     fn as_ref(&self) -> &str {
-        &self.0.expose_secret()
+        self.0.expose_secret()
     }
 }
 

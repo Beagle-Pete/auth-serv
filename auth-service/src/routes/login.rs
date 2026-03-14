@@ -84,7 +84,7 @@ async fn handle_2fa(email: &Email, state: &AppState, jar: CookieJar) -> Result<(
 #[tracing::instrument(name = "Handle_no_2FA", skip_all)]
 async fn handle_no_2fa(email: &Email, jar: CookieJar) -> Result<(CookieJar, StatusCode, Json<LoginResponse>), AuthAPIError> {
     let auth_cookie = auth::generate_auth_cookie(email)
-        .map_err(|e| {AuthAPIError::UnexpectedError(e.into())})?;
+        .map_err(|e| {AuthAPIError::UnexpectedError(e)})?;
 
     let updated_jar = jar.add(auth_cookie);
 

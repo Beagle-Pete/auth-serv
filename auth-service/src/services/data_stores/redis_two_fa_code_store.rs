@@ -92,10 +92,10 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         let login_attempt_id = LoginAttemptId::parse(two_fa_tuple.0)
-            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         let two_fa_code = TwoFACode::parse(two_fa_tuple.1)
-            .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         Ok((login_attempt_id, two_fa_code))
     }
