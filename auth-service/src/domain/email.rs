@@ -4,6 +4,7 @@ use secrecy::{ExposeSecret, SecretString};
 #[derive(Debug, Clone)]
 pub struct Email(SecretString);
 
+// TODO: Does exposing the secret here defeat the purpose of using SecretString?
 impl AsRef<str> for Email {
     fn as_ref(&self) -> &str {
         self.0.expose_secret()
