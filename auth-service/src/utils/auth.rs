@@ -2,18 +2,23 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use color_eyre::eyre::{Context, ContextCompat, Report, Result, eyre};
+use secrecy::{ExposeSecret, SecretString};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 use crate::app_state::BannedTokenStoreType;
 use crate::domain::Email;
 
 // Create cookie with a new JWT auth token
-pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
+#[tracing::instrument(name = "Generate_Auth_Cookie", skip_all)]
+pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>> {
     let token = generate_auth_token(email)?;
     Ok(create_auth_cookie(token))
 }
 
 // Create cookie and set the value to the passed-in token string
+#[tracing::instrument(name = "Create_Auth_Cookie", skip_all)]
 fn create_auth_cookie(token: String) -> Cookie<'static> {
     Cookie::build((JWT_COOKIE_NAME, token))
         .path("/") // apply cookie to all URLs on the server
@@ -22,73 +27,78 @@ fn create_auth_cookie(token: String) -> Cookie<'static> {
         .build()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum GenerateTokenError {
+    #[error("Token error: {0}")]
     TokenError(jsonwebtoken::errors::Error),
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
 }
 
 // This value determines how long the JWT auth token is valid for
 pub const TOKEN_TTL_SECONDS: i64 = 600; // 10 minutes
 
 // Create JWT auth token
-fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
+#[tracing::instrument(name = "Generate_Auth_Token", skip_all)]
+fn generate_auth_token(email: &Email) -> Result<String> {
     let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
-        .ok_or(GenerateTokenError::UnexpectedError)?;
+        .wrap_err("failed to create 10 minute time delta")?;
 
     // Create JWT expiration time
     let exp = Utc::now()
         .checked_add_signed(delta)
-        .ok_or(GenerateTokenError::UnexpectedError)?
+        .ok_or(eyre!("Failed to add time delta to current time"))?
         .timestamp();
 
     // Cast exp to a usize, which is what Claims expects
     let exp: usize = exp
         .try_into()
-        .map_err(|_| GenerateTokenError::UnexpectedError)?;
+        .wrap_err(format!("failed to cast exp time to usize. exp time: {}", exp))?;
 
     let sub = email.as_ref().to_owned();
 
     let claims = Claims { sub, exp };
 
-    create_token(&claims).map_err(GenerateTokenError::TokenError)
+    create_token(&claims)
 }
 
 // Check if JWT auth token is valid by decoding it using the JWT secret
+#[tracing::instrument(name = "Validate_Token", skip_all)]
 pub async fn validate_token(
     token: &str,
     banned_token_store: BannedTokenStoreType,
-) -> Result<Claims, jsonwebtoken::errors::Error> {
+) -> Result<Claims> {
     // Check if token is in banned token store
+    let token = SecretString::new(token.to_owned().into_boxed_str());
     let token_is_banned = banned_token_store
         .read()
         .await
-        .check_token(token)
-        .await
-        .map_err(|_| jsonwebtoken::errors::ErrorKind::InvalidToken)?;
+        .check_token(&token)
+        .await?;
 
     if token_is_banned {
-        return Err(jsonwebtoken::errors::Error::from(
-            jsonwebtoken::errors::ErrorKind::InvalidToken,
-        ));
+        return Err(eyre!("token is banned"));
     }
 
     // Decode JWT using secret in environmental variable
     decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
+        token.expose_secret(),
+        &DecodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
+    .wrap_err("failed to decode token")
 }
 
 // Create JWT auth token by encoding claims using the JWT secret
-fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
+#[tracing::instrument(name = "Create_Token", skip_all)]
+fn create_token(claims: &Claims) -> Result<String> {
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
     )
+    .wrap_err("Failed to create token")
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -100,13 +110,15 @@ pub struct Claims {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::SecretString;
     use tokio::sync::RwLock;
     use std::sync::Arc;
     use crate::services::data_stores::hashset_banned_token_store::HashsetBannedTokenStore;
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email_secret = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(email_secret).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
         assert_eq!(cookie.value().split('.').count(), 3);
@@ -128,14 +140,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email_secret = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(email_secret).unwrap();
         let result = generate_auth_token(&email).unwrap();
         assert_eq!(result.split('.').count(), 3);
     }
 
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email_secret = SecretString::new("test@example.com".to_owned().into_boxed_str());
+        let email = Email::parse(email_secret).unwrap();
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
 
         let token = generate_auth_token(&email).unwrap();

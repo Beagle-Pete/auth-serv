@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use redis::{Commands, Connection};
 use tokio::sync::RwLock;
+use color_eyre::eyre::{Context, Result};
+use secrecy::{ExposeSecret, SecretString};
 
 use crate::{
     domain::data_stores::{BannedTokenStore, BannedTokenStoreError},
@@ -23,27 +25,32 @@ impl RedisBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for RedisBannedTokenStore {
-    async fn add_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
+    #[tracing::instrument(name = "Add_Token", skip_all)]
+    async fn add_token(&mut self, token: &SecretString) -> Result<(), BannedTokenStoreError> {
         let key = get_key(token);
 
         let mut conn_lock = self.conn.write().await;
 
-        conn_lock.set_ex(key, token, TOKEN_TTL_SECONDS as u64)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+        conn_lock
+            .set_ex(key, token.expose_secret(), TOKEN_TTL_SECONDS as u64)
+            .wrap_err("failed to set banned token in Redis")
+            .map_err(BannedTokenStoreError::UnexpectedError)
     }
 
-    async fn check_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+    #[tracing::instrument(name = "Check_Token", skip_all)]
+    async fn check_token(&self, token: &SecretString) -> Result<bool, BannedTokenStoreError> {
         let key = get_key(token);
 
         let mut conn_lock = self.conn.write().await;
         conn_lock.exists(key)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+            .wrap_err("failed to check if token exists in Redis")
+            .map_err(BannedTokenStoreError::UnexpectedError)
     }
 }
 
 // We are using a key prefix to prevent collisions and organize data!
 const BANNED_TOKEN_KEY_PREFIX: &str = "banned_token:";
 
-fn get_key(token: &str) -> String {
-    format!("{}{}", BANNED_TOKEN_KEY_PREFIX, token)
+fn get_key(token: &SecretString) -> String {
+    format!("{}{}", BANNED_TOKEN_KEY_PREFIX, token.expose_secret())
 }

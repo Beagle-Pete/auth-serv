@@ -1,21 +1,22 @@
-use super::AuthAPIError;
+use color_eyre::eyre::{Result, eyre};
+use secrecy::{ExposeSecret, SecretString};
 
 use rand::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TwoFACode(String);
+#[derive(Debug, Clone)]
+pub struct TwoFACode(SecretString);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, AuthAPIError> {
+    pub fn parse(code: String) -> Result<Self> {
         match code.parse::<usize>() {
             Ok(_) => {
                 if code.len() != 6 {
-                    return Err(AuthAPIError::InvalidTwoFACode);
+                    return Err(eyre!("Invalid 2FA code"));
                 }
 
-                Ok(TwoFACode(code))
+                Ok(TwoFACode(SecretString::new(code.into_boxed_str())))
             },
-            Err(_) => Err(AuthAPIError::InvalidTwoFACode),
+            Err(_) => Err(eyre!("Invalid 2FA code")),
         }        
     }
 }
@@ -29,13 +30,18 @@ impl Default for TwoFACode {
             code = format!("{}{}", leading_zeros, code);
         } 
 
-        TwoFACode(code)
+        TwoFACode(SecretString::new(code.into_boxed_str()))
     }
 }
 
-
 impl AsRef<str> for TwoFACode {
     fn as_ref(&self) -> &str {
-        &self.0
+        self.0.expose_secret()
+    }
+}
+
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }

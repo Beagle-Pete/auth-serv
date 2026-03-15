@@ -9,12 +9,14 @@ use routes as api_routes;
 use app_state::AppState;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use utils::constants::{DROPLET_IP};
+use utils::tracing::{make_span_with_request_id, on_request, on_response};
+use secrecy::{ExposeSecret, SecretString};
 
 use std::error::Error;
 
 use axum::{Router, routing::post, serve::Serve, http::Method};
 use tokio::net::TcpListener;
-use tower_http::{services::ServeDir, cors::CorsLayer};
+use tower_http::{services::ServeDir, cors::CorsLayer, trace::TraceLayer};
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -46,7 +48,13 @@ impl Application {
             .route("/verify-2fa", post(api_routes::verify_2fa))
             .route("/verify-token", post(api_routes::verify_token))
             .with_state(app_state)
-            .layer(cors);
+            .layer(cors)
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(make_span_with_request_id)
+                    .on_request(on_request)
+                    .on_response(on_response)
+                );
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -61,14 +69,14 @@ impl Application {
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
-        println!("listening on {}", &self.address);
+        tracing::info!("listening on {}", &self.address);
         self.server.await
     }
 }
 
-pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+pub async fn get_postgres_pool(url: &SecretString) -> Result<PgPool, sqlx::Error> {
     // Create a new PostgreSQL connection pool
-    PgPoolOptions::new().max_connections(5).connect(url).await
+    PgPoolOptions::new().max_connections(5).connect(url.expose_secret()).await
 }
 
 pub fn get_redis_client(redis_hostname: String) -> RedisResult<Client> {
