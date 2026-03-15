@@ -29,6 +29,7 @@ impl PostmarkEmailClient {
 
 #[async_trait::async_trait]
 impl EmailClient for PostmarkEmailClient {
+    #[tracing::instrument(name = "Sending email", skip_all)]
     async fn send_email(&self, 
         recipient: Email,
         subject: &str,
